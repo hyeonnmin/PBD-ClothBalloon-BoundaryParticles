@@ -23,7 +23,7 @@ Boundary Particle을 실시간으로 생성하여 업데이트한다.
 
 ## 📌 Core Idea: Position-Based Dynamics with Boundary Particles
 
-본 ClothBalloons Simulation은 **Position-Based Dynamics(PBD)**의
+본 ClothBalloons Simulation은 **Position-Based Dynamics(PBD)** 의
 constraint projection 방식을 기반으로 구현되었다.
 물체를 입자(particle)의 집합으로 표현하고,
 입자 간의 구조적·기하학적 관계를 제약 조건(constraint) 으로 모델링한다.
@@ -296,5 +296,91 @@ Boundary particle은 자체 normal을 가지지 않으므로,
 
 https://github.com/user-attachments/assets/a02539d0-6f38-428f-9b91-188d75c57cfd
 
+---
+
+## 📌 Limitations & Trade-Offs
+
+본 PBD Cloth Simulation 구현은 실시간 환경에서의 안정성과 단순성을 우선으로 설계되었으며,
+이에 따라 다음과 같은 한계점과 트레이드오프가 존재한다.
+
+---
+
+### 1. Sampling Density vs. Performance
+
+Boundary particle의 밀도는 배치 간격 d에 의해 결정되며,
+d 값에 따라 경계 표현의 정밀도와 연산 비용 사이에 트레이드오프가 발생한다.
+
+- d가 작은 경우
+  - boundary particle 수 증가
+  - 경계 표현 및 안정성 향상
+  - 연산 비용 증가
+
+- d가 큰 경우
+  - 연산 비용 감소
+  - 경계 해상도 저하
+
+본 구현에서는
+배치 간격 d를 사용자 파라미터로 노출하여,
+시뮬레이션 안정성과 실시간 성능 사이의 균형을 선택할 수 있도록 설계하였다.
+
+---
 
 
+### 2. Dynamic Resampling Cost
+
+Boundary particle은 시뮬레이션 도중
+edge 길이 및 삼각형 형태 변화에 따라
+sampling 개수(n)가 동적으로 변할 수 있다.
+
+- sampling 개수가 유지되는 경우
+  - 기존 boundary particle을 유지
+  - 위치와 normal만 업데이트
+
+- sampling 개수가 변경되는 경우
+  - 기존 boundary particle을 제거
+  - 전체를 다시 resampling
+
+→ 본 구현에서는
+sampling 개수 변화가 발생한 경우에만 resampling을 수행하는 전략을 사용하여,
+형태 변화에 대한 정확한 대응과 불필요한 연산 비용 증가 사이의 균형을 선택하였다.
+
+---
+
+## 📌 Future Work
+
+### Adaptive Boundary Sampling
+
+현재 Boundary Particle의 배치 간격 d는 전역 상수로 설정되어 있다.
+향후에는 다음과 같은 기준을 활용해 boundary sampling 밀도를 동적으로 조절할 수 있다.
+
+- 곡률이 큰 영역에서 더 촘촘한 sampling
+
+- 변형이 큰 edge 또는 삼각형에는 적은 refinement
+
+- 화면 거리에 따른 sampling 조절
+
+이를 통해 성능과 정밀도 사이의 균형을 자동으로 조절하는 adaptive boundary 표현이 가능할 것이다.
+
+---
+
+## Development Environment
+
+- Language: C++
+- Graphics API: DirectX11
+- Development Environment: Visual Studio 2022
+- Build Configuration: x64, Debug / Release
+
+### Hardware
+- CPU: Intel CPU (Desktop)
+- GPU: NVIDIA RTX 3060
+- RAM: 16GB
+
+### Platform
+- OS: Windows 10 / 11
+  
+---
+
+## References
+
+- Müller et al., *Position Based Dynamics*, VRIPHYS 2006, AGEIA
+- Akinci et al., Coupling Elastic Solids with SPH Fluids, SCA 2012
